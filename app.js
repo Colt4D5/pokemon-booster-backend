@@ -1,39 +1,32 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
-const session = require('express-session');
 
+const auth = require('./utils/auth');
 const userRouter = require('./routes/userRouter');
+const cardsRouter = require('./routes/cardsRouter');
+const profileRouter = require('./routes/profileRouter');
 require('dotenv').config();
 
 const app = express();
 
-var sess = {
-  secret: process.env.SESSION_SECRET,
-  resave: false,
-  saveUninitialized: true,
-  cookie: {}
-}
-
-if (app.get('env') === 'production') {
-  app.set('trust proxy', 1) // trust first proxy
-  sess.cookie.secure = true // serve secure cookies
-}
-
-app.use(session(sess))
+app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-app.use(cors({
-  origin: 'http://localhost:5173',
-}));
+app.use(cors());
 
 const port = process.env.PORT || 5000;
 
 mongoose.connect(process.env.DB_CONNECTION, { useNewUrlParser: true }, () => console.log('Connected to MongoDB'));
 
 app.use(`/users`, userRouter);
+app.use(`/cards`, cardsRouter);
+app.use('/profile', profileRouter);
 
 app.get('/', (req, res) => {
-  res.json({ message: 'Hello World!!!' });
+  res.json({ 
+    status: 'success',
+    message: "This is the home page",
+  });
 })
 
 app.use((error, req, res, next) => {
@@ -43,6 +36,14 @@ app.use((error, req, res, next) => {
     stack: process.env.NODE_ENV === 'production' ? '🥞' : error.stack
   })
 })
+
+// function redirectToHome(req, res, next) {
+//   if (req.session.user) {
+//     next();
+//   } else {
+//     res.redirect('http://localhost:5173/');
+//   }
+// }
 
 app.listen(port, () => {
   console.log(`Server listening on port ${port}!`);
